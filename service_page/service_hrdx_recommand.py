@@ -3,6 +3,23 @@ import requests
 import json
 import os
 import streamlit.components.v1 as components
+from streamlit_extras.stylable_container import stylable_container
+
+# 외부 CSS 파일 불러오기
+def load_css():
+    with open("style/style.css", "r", encoding="utf-8") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# CSS 로드 함수 호출
+load_css()
+
+# d2c, mellerisearch expansion 기능
+if st.session_state.hrdx_expanded == False:
+    st.session_state.d2c_expanded = False
+    st.session_state.survey_expanded = False
+    st.session_state.mellerisearch_expanded = False
+    st.session_state.hrdx_expanded = True
+    st.rerun() 
 
 # =======================================================================
 # 서비스 페이지 개발 가이드
@@ -19,45 +36,7 @@ import streamlit.components.v1 as components
 
 # ======= 서비스별 커스터마이징 영역 I =======
 # 서비스 ID (세션 상태 키 접두사로 사용)
-SERVICE_ID = "nps3"
-# ========================================
-
-
-# ======= 서비스별 커스터마이징 영역 II =======
-# 이 부분을 수정하여 다양한 서비스에 화면을 구성합니다.
-
-# ==== MAIN 채팅 화면 정보 ====
-# 서비스 기본 정보
-SERVICE_NAME = "Intellytics NPS 분석 서비스"
-SERVICE_DESCRIPTION = """
-이 서비스는 고객 NPS(Net Promoter Score) 데이터를 분석하여
-비즈니스 인사이트를 제공합니다. 
-
-고객 피드백을 업로드하면 AI가 분석하여 개선점과 
-주요 트렌드를 알려드립니다.
-"""
-
-# 대표 질문 리스트
-SAMPLE_QUESTIONS = [
-    "NPS 점수가 가장 낮은 상위 3개 제품은 무엇인가요?",
-    "지난 분기 대비 NPS 점수가 가장 많이 향상된 카테고리는?",
-    "고객 불만이 가장 많은 영역과 개선 방안을 알려주세요"
-]
-
-# # API 엔드포인트 형식 (중요: 서비스별 SERVICE_ID를 적용하여 엔드포인트에 연결합니다.)
-# api_endpoint = SERVICE_ID+"."+os.getenv("ROOT_DOMAIN")
-
-# 테스트를 위한 API 엔드포인트 (테스트용입니다.)
-api_endpoint = os.environ.get("API 엔드포인트", "http://localhost:8081/ask")
-# api_endpoint = st.text_input("API 엔드포인트", value="http://localhost:8081/ask")
-
-# ==== Sidebar 화면 정보 ====
-# SIDEBAR_INFO = "### 서비스 안내"
-# HTML 문법 가능
-SIDEBAR_SEARCHING_GUIDE = """
-NPS 데이터를 분석하여 실행 가능한 인사이트를 제공합니다.<br>
-**구체적인 질문을 통해 더 정확한 분석 결과를 얻을 수 있습니다**
-"""
+SERVICE_ID = "hrdx-demo-recommand"
 # ========================================
 
 # 세션 상태 초기화 (서비스별 고유 키 사용)
@@ -66,7 +45,7 @@ if f'{SERVICE_ID}_messages' not in st.session_state:
 
 if f"{SERVICE_ID}_language" not in st.session_state:
     st.session_state[f"{SERVICE_ID}_language"] = "ko"  # 기본 언어는 한국어
-
+    
 if f"{SERVICE_ID}_selected_question" not in st.session_state:
     st.session_state[f"{SERVICE_ID}_selected_question"] = ""
 
@@ -81,6 +60,61 @@ if f"{SERVICE_ID}_clear_input" not in st.session_state:
     
 if f"{SERVICE_ID}_text_input_key_counter" not in st.session_state:
     st.session_state[f"{SERVICE_ID}_text_input_key_counter"] = 0
+
+if f"{SERVICE_ID}_country" not in st.session_state:
+    st.session_state[f"{SERVICE_ID}_country"] = "United Kingdom"
+
+
+# ======= 서비스별 커스터마이징 영역 II =======
+# 이 부분을 수정하여 다양한 서비스에 화면을 구성합니다.
+
+# ==== MAIN 채팅 화면 정보 ====
+# 서비스 기본 정보
+SERVICE_NAME = {'ko': "HRDX 교육 추천 서비스", "en": "HRDX - Education Recommendation Service"}
+
+SERVICE_DESCRIPTION = {
+    "ko":"""해당 서비스는 직원의 업무 경험을 바탕으로 적합한 교육 추천을 하는 서비스입니다.
+""" ,
+    "en" : "..."
+}
+
+# 대표 질문 리스트
+SAMPLE_QUESTIONS = {
+    "ko":[
+    "원가 절감 및 VI 관리 목표 설정 업무 경험에 기반한 교육 추천해주세요.",
+    "데이터 사이언스 업무 경험에 기반한 교육 상위3개 추천해주세요.",
+    "kubernates 구축 및 DevOps 관련한 교육 5개 추천해주세요.",
+    "중남미 지역 주재원 업무에 관련한 교육 추천해주세요."
+    ], 
+    "en":[
+    "under constuction..."
+    ]
+}
+
+# 기본 API 엔드포인트
+# #api_endpoint = os.environ.get("API 엔드포인트", "https://hrdx-demo-recommand.mkdev-kic.intellytics.lge.com/api/chat")
+# api_endpoint = "http://" + SERVICE_ID + "." + os.getenv("ROOT_DOMAIN") + "/api/chat"
+# # api_endpoint = st.text_input("API 엔드포인트", value="http://localhost:8081/ask")
+api_endpoint = "https://hrdx-demo-recommand.mkdev-kic.intellytics.lge.com/api/chat"
+
+# ==== Sidebar 화면 정보 ====
+# SIDEBAR_INFO = "### 서비스 안내"
+# HTML 문법 가능
+SIDEBAR_SEARCHING_GUIDE = {
+    "ko":"""
+...<br>
+""",
+    "en":"""
+Under construction... <br>       
+"""
+}
+
+sample_questions_description = {
+    "ko": "아래 질문을 클릭하면 채팅창에 입력되며 즉시 실행됩니다.",
+    "en": "under construction..."
+}
+
+# ========================================
 
 
 # ======= API 통신 함수 =======
@@ -108,12 +142,11 @@ def ask_llm_api(endpoint, query,language="ko"):
             "language": language
         }
         
-        # API 호출
+        # sg-server api
         response = requests.post(
-            endpoint,
-            json=payload,
-            headers={"Content-Type": "application/json"},
-            timeout=30  # 30초 타임아웃 설정
+            endpoint, 
+            headers= {"accept": "application/json"},
+            params=payload  # URL 파라미터로 전달
         )
         
         if response.status_code == 200:
@@ -137,27 +170,33 @@ def ask_llm_api(endpoint, query,language="ko"):
 
 # 사이드바 구성
 with st.sidebar:
-    st.title(SERVICE_NAME)
+    st.title(SERVICE_NAME[st.session_state[SERVICE_ID + '_language']])
     
     # st.markdown(SIDEBAR_INFO)
-    st.markdown(SIDEBAR_SEARCHING_GUIDE, unsafe_allow_html=True)
+    # st.markdown(SIDEBAR_SEARCHING_GUIDE[st.session_state[f"{SERVICE_ID}_language"]], unsafe_allow_html=True)
     
-    st.markdown("---")
+    # st.markdown("---")
     
-    # 언어 선택 라디오 버튼
-    st.markdown("<div class='language-selector'>", unsafe_allow_html=True)
-    selected_language = st.radio(
-        "언어 선택:", 
-        options=["한국어", "English"],
-        index=0 if st.session_state.get(f"{SERVICE_ID}_language", "ko") == "ko" else 1,
-        key=f"{SERVICE_ID}_language_radio",
-        horizontal=True,
-        on_change=lambda: st.session_state.update({f"{SERVICE_ID}_language": "ko" if st.session_state[f"{SERVICE_ID}_language_radio"] == "한국어" else "en"})
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+    # # 언어 선택 라디오 버튼
+    # st.markdown("<div class='language-selector'>", unsafe_allow_html=True)
+    # selected_language = st.radio(
+    #     "Language:", 
+    #     options=["한국어", "English"],
+    #     index=0 if st.session_state.get(f"{SERVICE_ID}_language", "ko") == "ko" else 1,
+    #     key=f"{SERVICE_ID}_language_radio",
+    #     horizontal=True,
+    #     on_change=lambda: st.session_state.update({f"{SERVICE_ID}_language": "ko" if st.session_state[f"{SERVICE_ID}_language_radio"] == "한국어" else "en"})
+    # )
+    # st.markdown("</div>", unsafe_allow_html=True)
     
-    # 언어 상태 자동 업데이트
-    st.session_state[f"{SERVICE_ID}_language"] = "ko" if selected_language == "한국어" else "en"
+    # # 언어 상태 자동 업데이트
+    # st.session_state[f"{SERVICE_ID}_language"] = "ko" if selected_language == "한국어" else "en"
+    
+    # # 해외 법인 데이터 선택 
+    # st.selectbox("Nation", ["United Kingdom", "Germany", "Spain", "Italy", "Brazil"],
+    #                 index=0,
+    #                 key=st.session_state[f"{SERVICE_ID}_country"],
+    #                 disabled=True)
     
     # 채팅 초기화 버튼
     if st.button("대화 초기화", use_container_width=True, key=f"{SERVICE_ID}_reset_btn"):
@@ -167,34 +206,55 @@ with st.sidebar:
         st.session_state[f"{SERVICE_ID}_question_selected"] = False
         st.session_state[f"{SERVICE_ID}_clear_input"] = False
         st.session_state[f"{SERVICE_ID}_text_input_key_counter"] = 0
+        
+        # refresh memory on the api server
+        # response = requests.post(
+        #     refresh_memory_api_url, 
+        #     params={"dummy": "dummy"}  # llo qpi 규칙상 입출력 있어야하기 때문에 작성한 dummy
+        # )
+
         st.rerun()
     
     st.divider()
     
-    st.info("""
-    이 애플리케이션은 Intellytics에 배포된 LLM API를 사용합니다.
-    """)
+    info_text = {"ko": "이 애플리케이션은 **Intellytics**에 배포된 LLM API를 사용합니다.", "en": "The Application uses LLM API distributed by **Intellytics**"}
+    version_text = "© 2025 HRDX | Ver 1.0"
+    st.info(info_text[st.session_state[f"{SERVICE_ID}_language"]])
     
     # 사이드바 하단에 저작권 정보 표시
     st.markdown("---")
-    st.markdown("© 2025 LLM 서비스 템플릿 | 버전 1.0")
+    st.markdown(version_text)
 
 # 1. 메인 화면 및 서비스 설명
-st.markdown(f"<div class='main-title'>{SERVICE_NAME}</div>", unsafe_allow_html=True)
-st.markdown(f"<div class='service-description'>{SERVICE_DESCRIPTION}</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='main-title'>{SERVICE_NAME[st.session_state[SERVICE_ID + '_language']]}</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='service-description'>{SERVICE_DESCRIPTION[st.session_state[SERVICE_ID + '_language']]}</div>", unsafe_allow_html=True)
 
-# 2. 대표 질문 섹션
-st.markdown("<h3 class='sample-questions-title'>대표 질문</h3>", unsafe_allow_html=True)
-st.markdown("<p class='sample-questions-description'>이 서비스의 예시 질문 목록입니다. 궁금한 질문을 클릭하면 바로 실행되니 편하게 활용해 보세요!</p>", unsafe_allow_html=True)
-
-# 3. 대표 질문 버튼 컨테이너 및 버튼
+# 대표 질문 섹션
+st.markdown("<h3 class='sample-questions-title'>FAQ</h3>", unsafe_allow_html=True)
+st.markdown(f"<p class='sample-questions-description'>{sample_questions_description[st.session_state[SERVICE_ID+'_language']]}</p>", unsafe_allow_html=True)
 st.markdown("<div class='sample-questions-container'>", unsafe_allow_html=True)
-for i, question in enumerate(SAMPLE_QUESTIONS):
-    if st.button(question, key=f"{SERVICE_ID}_q_btn_{i}", use_container_width=True):
-        st.session_state[f"{SERVICE_ID}_user_input"] = question
-        st.session_state[f"{SERVICE_ID}_question_selected"] = True
-        st.session_state[f"{SERVICE_ID}_selected_question"] = question  # 선택된 질문 저장
-        st.rerun()  # 여기서는 rerun으로 페이지를 새로고침하고 아래의 코드에서 질문 처리
+# 3. 대표 질문 버튼 컨테이너 및 버튼
+with stylable_container(
+    key="sample_questions",
+    css_styles="""
+    button{
+        display: flex;
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    """
+):
+    for i, question in enumerate(SAMPLE_QUESTIONS[st.session_state[SERVICE_ID + '_language']]):
+        if st.button(question, key=f"{SERVICE_ID}_q_btn_{i}", use_container_width=True):
+            # 선택된 질문을 user_input 세션 상태에 저장 (채팅 입력창에 표시하기 위해)
+            st.session_state[f"{SERVICE_ID}_user_input"] = question
+            # 대표 질문 선택 플래그 설정 - 입력창에 포커스를 주기 위한 용도로만 사용
+            st.session_state[f"{SERVICE_ID}_question_selected"] = True
+            st.session_state[f"{SERVICE_ID}_selected_question"] = question
+            # 페이지 새로고침 (입력창에 질문 표시)
+            st.rerun()
+            
 st.markdown("</div>", unsafe_allow_html=True)
 
 # 4. 채팅 컨테이너 생성 - 여기서 정의만 하고 내용은 아래에서 채움
@@ -218,7 +278,10 @@ def process_user_query(query):
     if not result.get("success", False):
         response = f"오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}"
     else:
-        response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+        #print(result.get("data", {}))
+        #response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+        #response = result.get("data", {}).get("response", "응답을 받지 못했습니다.")
+        response = result.get("data")
     
     # 응답 표시
     with chat_container.chat_message("assistant"):
@@ -365,17 +428,14 @@ with chat_container:
             width=0,
         )
 
-# # 페이지 끝에 여백 추가 (입력창이 메시지를 가리지 않도록)
-# st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
-
 # 채팅 입력을 사용하여 사용자 입력 받기
-user_input = st.chat_input("질문을 입력하세요...", key=f"{SERVICE_ID}_chat_input")
+user_input = st.chat_input(key=f"{SERVICE_ID}_chat_input")
 
 # 저장된 대표 질문이 있는지 확인하고 처리
 if st.session_state.get(f"{SERVICE_ID}_selected_question"):
-    selected_question = st.session_state[f"{SERVICE_ID}_selected_question"]
+    user_input = st.session_state[f"{SERVICE_ID}_selected_question"]
     st.session_state[f"{SERVICE_ID}_selected_question"] = ""  # 처리 후 초기화
-    process_user_query(selected_question)
+    #process_user_query(selected_question)
 
 # 사용자 입력 처리
 if user_input and user_input.strip():
@@ -400,6 +460,39 @@ if user_input and user_input.strip():
     
     # 페이지 새로고침
     st.rerun()
+
+# 채팅 컨테이너 자동 스크롤을 위한 스크립트만 유지
+st.markdown("""
+<div class="chat-bottom-spacing"></div>
+
+<script>
+// 채팅 컨테이너를 자동으로 스크롤하는 함수
+function scrollChatContainerToBottom() {
+    const chatContainer = document.querySelector('.stChatMessageContainer');
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+}
+
+// 페이지 로드 후 및 DOM 변경 시마다 스크롤 함수 실행
+document.addEventListener('DOMContentLoaded', function() {
+    scrollChatContainerToBottom();
+    // DOM 변경을 관찰하여 새 메시지가 추가될 때마다 스크롤
+    const observer = new MutationObserver(function(mutations) {
+        scrollChatContainerToBottom();
+    });
+    
+    // 페이지 로드 후 잠시 기다린 후 채팅 컨테이너를 찾아 관찰 시작
+    setTimeout(function() {
+        const chatContainer = document.querySelector('.stChatMessageContainer');
+        if (chatContainer) {
+            observer.observe(chatContainer, { childList: true, subtree: true });
+        }
+        scrollChatContainerToBottom();
+    }, 1000);
+});
+</script>
+""", unsafe_allow_html=True)
 
 # 사이드바 너비 즉시 설정 (페이지 로드 시 바로 적용)
 st.markdown("""
@@ -463,9 +556,11 @@ st.markdown(f"""
     
     /* Streamlit 기본 컨테이너 너비 조정 */
     .block-container {{
-        max-width: 800px !important;
+        width: 70vw !important;
+        max-width: 1200px !important;
         padding-left: 20px !important;
         padding-right: 20px !important;
+        margin: 0 auto !important;
     }}
     
     /* 사이드바 너비 조정 */
@@ -559,8 +654,8 @@ st.markdown("""
 
 /* 채팅 입력 스타일 - 컨테이너와 동일한 크기로 설정 */
 [data-testid="stChatInput"] {
-    max-width: 800px !important;
-    width: 800px !important;
+    max-width: 1200px !important;
+    width: 70vw !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }

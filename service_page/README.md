@@ -1,6 +1,8 @@
 # Streamlit 서비스 페이지 개발 가이드
 
-이 가이드는 `service_template_main.py`를 기반으로 새로운 Streamlit 서비스 페이지를 개발하고자 하는 개발자를 위한 문서입니다. 템플릿을 활용하여 자신만의 AI 기반 대화형 서비스를 쉽게 구현할 수 있습니다.
+이 가이드는 `service_template_main.py`를 기반으로 새로운 Streamlit 서비스 페이지를 개발하고자 하는 개발자를 위한 문서입니다.
+
+템플릿을 활용하여 자신만의 AI 기반 대화형 서비스를 쉽게 구현할 수 있습니다.
 
 ## 1. 템플릿 구조 이해하기
 
@@ -21,7 +23,7 @@
 2. 서비스 ID를 변경합니다:
    ```python
    # 서비스 ID (세션 상태 키 접두사로 사용)
-   SERVICE_ID = "my_service"  # 고유한 ID로 변경
+   SERVICE_ID = "my-service"  # 고유한 ID로 변경, # 예시. d2c-fallout
    ```
 
 ### 2.2 서비스 정보 커스터마이징
@@ -30,7 +32,7 @@
 
 ```python
 # 서비스 기본 정보
-SERVICE_NAME = "내 서비스 이름"
+SERVICE_NAME = "내 서비스 이름" # 타이틀 정보보
 SERVICE_DESCRIPTION = """
 여기에 서비스에 대한 설명을 작성합니다.
 여러 줄로 작성할 수 있습니다.
@@ -43,8 +45,12 @@ SAMPLE_QUESTIONS = [
     "세 번째 질문은 어떻게 작성하면 좋을까요?"
 ]
 
-# 기본 API 엔드포인트
-api_endpoint = os.environ.get("API 엔드포인트", "http://localhost:8081/your_service_endpoint")
+
+# 운영용 API 엔드포인트
+# 실재 개발시 아래 형식으로 코드를 작성합니다.
+import os
+api_endpoint = SERVICE_ID + "." + os.getenv("ROOT_DOMAIN")
+
 
 # 사이드바 정보
 SIDEBAR_SEARCHING_GUIDE = """
@@ -55,36 +61,143 @@ SIDEBAR_SEARCHING_GUIDE = """
 
 ## 3. API 통신 함수 수정하기
 
-서비스에 맞게 API 통신 함수를 수정합니다:
+서비스에 맞게 API 통신 함수를 수정합니다. 서비스별로 입력 인자와 출력 구조가 다를 수 있으므로 필요에 따라 적절히 조정하세요:
+
+### 3.1 기본 API 함수 구조
 
 ```python
-def ask_llm_api(query, endpoint):
+def ask_llm_api(endpoint, query, language="ko", **additional_params):
+    """
+    LLM API와 통신하는 함수
+    
+    Parameters:
+    -----------
+    endpoint : str
+        API 엔드포인트 URL
+    query : str
+        사용자 질의 내용
+    language : str, optional
+        언어 코드 (기본값: "ko")
+    **additional_params : dict
+        서비스별 추가 파라미터
+        
+    Returns:
+    --------
+    dict
+        API 응답 결과를 포함하는 딕셔너리
+    """
     try:
-        # 필요에 따라 요청 데이터 구조 변경
+        # API 요청 데이터 준비 - 서비스별로 필요한 파라미터 추가
         payload = {
             "query": query,
-            "service_type": "your_service_type",  # 필요한 경우 추가 파라미터
-            # 기타 필요한 파라미터
+            "language": language
         }
         
+        # 추가 파라미터가 있으면 페이로드에 추가
+        if additional_params:
+            payload.update(additional_params)
+        
+        # API 호출
         response = requests.post(
             endpoint,
             json=payload,
             headers={"Content-Type": "application/json"},
-            timeout=30
+            timeout=30  # 30초 타임아웃 설정
         )
         
         if response.status_code == 200:
-            # 응답 처리 로직 수정
-            return response.json()
+            return {"success": True, "data": response.json()}
         else:
             return {
-                "query": query, 
-                "result": f"오류가 발생했습니다: {response.status_code}", 
-                "error": response.text
+                "success": False, 
+                "error": f"API 오류: {response.status_code}", 
+                "details": response.text
             }
+    except requests.exceptions.Timeout:
+        return {"success": False, "error": "API 요청 시간이 초과되었습니다. 나중에 다시 시도해주세요."}
+    except requests.exceptions.ConnectionError:
+        return {"success": False, "error": "API 서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요."}
     except Exception as e:
-        return {"query": query, "result": f"요청 오류: {str(e)}"}
+        return {"success": False, "error": f"오류가 발생했습니다: {str(e)}"}
+```
+
+### 3.2 서비스별 API 함수 커스터마이징
+
+서비스 특성에 따라 다양한 방식으로 API 함수를 수정할 수 있습니다:
+
+#### 3.2.1 인자 순서 변경
+
+인자 순서를 변경할 경우, 함수를 호출하는 모든 곳에서 일관되게 변경해야 합니다:
+
+```python
+# 기존 호출 방식
+result = ask_llm_api(query, endpoint, language)
+
+# 변경된 호출 방식
+result = ask_llm_api(endpoint, query, language)
+
+# 명시적 인자 이름 사용 (권장)
+result = ask_llm_api(endpoint=api_endpoint, query=user_input, language=selected_language)
+```
+
+#### 3.2.2 서비스별 추가 파라미터
+
+서비스별로 필요한 추가 파라미터를 정의할 수 있습니다:
+
+```python
+# NPS 분석 서비스
+def ask_llm_api_nps(endpoint, query, language="ko", time_period="all", category=None):
+    payload = {
+        "query": query,
+        "language": language,
+        "service_type": "nps",
+        "time_period": time_period
+    }
+    
+    if category:
+        payload["category"] = category
+    
+    # 이하 API 호출 로직...
+
+# VOC 분석 서비스
+def ask_llm_api_voc(endpoint, query, language="ko", sentiment_filter=None):
+    payload = {
+        "query": query,
+        "language": language,
+        "service_type": "voc",
+        "sentiment_filter": sentiment_filter
+    }
+    
+    # 이하 API 호출 로직...
+```
+
+#### 3.2.3 응답 처리 커스터마이징
+
+서비스별로 응답 구조가 다를 경우, 응답 처리 로직을 조정합니다:
+
+```python
+# 기본 응답 처리
+if not result.get("success", False):
+    response = f"오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}"
+else:
+    response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+
+# 차트 데이터가 포함된 응답 처리
+if not result.get("success", False):
+    response = f"오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}"
+else:
+    text_response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+    chart_data = result.get("data", {}).get("chart_data")
+    
+    # 텍스트 응답 표시
+    with chat_container.chat_message("assistant"):
+        st.markdown(text_response)
+    
+    # 차트 데이터가 있으면 시각화
+    if chart_data:
+        with chat_container:
+            df = pd.DataFrame(chart_data)
+            st.bar_chart(df)
 ```
 
 ## 4. UI 요소 추가 또는 수정하기
@@ -240,11 +353,161 @@ if submitted and user_input.strip():
     # 세션에 사용자 메시지 추가
     st.session_state[f'{SERVICE_ID}_messages'].append({"role": "user", "content": processed_input})
     
-    # 추가 처리 로직
-    # ...
+    # API 호출 및 응답 처리 (인자 순서 주의)
+    with spinner_container, st.spinner("답변을 생성 중입니다..."):
+        # 명시적 인자 이름 사용 (권장)
+        result = ask_llm_api(
+            endpoint=api_endpoint, 
+            query=processed_input, 
+            language=st.session_state[f"{SERVICE_ID}_language"]
+        )
     
-    # API 호출 및 응답 처리
-    # ...
+    # 응답 처리
+    if not result.get("success", False):
+        response = f"오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}"
+    else:
+        response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+    
+    # 응답 표시 및 세션 상태 업데이트
+    with chat_container.chat_message("assistant"):
+        st.markdown(response)
+    
+    st.session_state[f'{SERVICE_ID}_messages'].append({"role": "assistant", "content": response})
+```
+
+## 8.5 사용자 질문 처리 및 API 호출 함수
+
+최신 템플릿에서는 사용자 질문 처리 로직이 별도의 함수로 모듈화되어 있습니다. 이를 통해 코드 가독성이 향상되고, 유지보수가 용이해집니다:
+
+```python
+# 사용자 질문 처리 및 API 호출 함수 정의
+def process_user_query(query):
+    # 사용자 입력 표시
+    with chat_container.chat_message("user"):
+        st.markdown(query)
+    
+    # 세션에 사용자 메시지 추가
+    st.session_state[f'{SERVICE_ID}_messages'].append({"role": "user", "content": query})
+    
+    # API 호출 (with spinner) - 스피너를 채팅 메시지와 입력창 사이에 표시
+    with spinner_container, st.spinner("답변을 생성 중입니다..."):
+        result = ask_llm_api(endpoint=api_endpoint, query=query, language=st.session_state[f"{SERVICE_ID}_language"])
+
+    # 응답 처리
+    if not result.get("success", False):
+        response = f"오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}"
+    else:
+        response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+    
+    # 응답 표시
+    with chat_container.chat_message("assistant"):
+        st.markdown(response)
+    
+    # 세션에 응답 메시지 추가
+    st.session_state[f'{SERVICE_ID}_messages'].append({"role": "assistant", "content": response})
+    
+    # 자동 스크롤 컴포넌트 추가 (응답 후)
+    components.html(
+        """
+        <script>
+        function findChatContainer() {
+            // 여러 가능한 선택자를 시도
+            const selectors = [
+                '.stChatMessageContainer',
+                '[data-testid="stChatMessageContainer"]',
+                '.element-container:has(.stChatMessage)',
+                '#chat-container-marker',
+                '.main .block-container'
+            ];
+            
+            for (const selector of selectors) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    // 스크롤 가능한 부모 요소 찾기
+                    let parent = element;
+                    while (parent && getComputedStyle(parent).overflowY !== 'auto' && parent !== document.body) {
+                        parent = parent.parentElement;
+                    }
+                    return parent || element;
+                }
+            }
+            
+            // 최후의 수단: 메인 컨테이너 반환
+            return document.querySelector('.main') || document.body;
+        }
+        
+        function scrollToBottom() {
+            const chatContainer = findChatContainer();
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+        
+        // 즉시 스크롤 실행
+        scrollToBottom();
+        
+        // 여러 시점에 스크롤 실행 (안정성 향상)
+        setTimeout(scrollToBottom, 100);
+        setTimeout(scrollToBottom, 300);
+        setTimeout(scrollToBottom, 500);
+        setTimeout(scrollToBottom, 1000);
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+```
+
+### 8.5.1 사용 방법
+
+이 함수는 다음과 같이 호출합니다:
+
+```python
+# 사용자 입력 처리 시
+if user_input and user_input.strip():
+    process_user_query(user_input)
+    
+# 대표 질문 클릭 처리 시
+if st.session_state.get(f"{SERVICE_ID}_selected_question"):
+    selected_question = st.session_state[f"{SERVICE_ID}_selected_question"]
+    st.session_state[f"{SERVICE_ID}_selected_question"] = ""  # 처리 후 초기화
+    process_user_query(selected_question)
+```
+
+### 8.5.2 커스터마이징 옵션
+
+서비스에 따라 다음과 같은 부분을 커스터마이징할 수 있습니다:
+
+1. **스피너 메시지**: `st.spinner()` 내의 텍스트를 서비스에 맞게 변경합니다.
+2. **응답 처리 로직**: 서비스에서 반환하는 응답 구조에 맞게 처리 로직을 수정합니다.
+3. **추가 시각화 요소**: 차트, 이미지 등 API 응답에 포함된 추가 데이터를 시각화할 수 있습니다.
+4. **오류 처리 강화**: 서비스별 특수 오류 상황에 대한 처리를 추가할 수 있습니다.
+
+```python
+# 고급 응답 처리 예시
+if not result.get("success", False):
+    error_msg = result.get("error", "알 수 없는 오류")
+    response = f"오류가 발생했습니다: {error_msg}"
+    
+    # 오류 유형별 사용자 친화적 메시지
+    if "시간이 초과" in error_msg:
+        response += "\n\n현재 서버가 혼잡한 것 같습니다. 잠시 후 다시 시도해주세요."
+    elif "연결할 수 없" in error_msg:
+        response += "\n\n네트워크 연결을 확인하거나 관리자에게 문의해주세요."
+else:
+    response_data = result.get("data", {})
+    response = response_data.get("result", "응답을 받지 못했습니다.")
+    
+    # 추가 데이터 처리
+    charts = response_data.get("charts", [])
+    for chart in charts:
+        with chat_container:
+            if chart["type"] == "bar":
+                df = pd.DataFrame(chart["data"])
+                st.bar_chart(df)
+            elif chart["type"] == "line":
+                df = pd.DataFrame(chart["data"])
+                st.line_chart(df)
 ```
 
 ## 9. 고급 기능 추가하기

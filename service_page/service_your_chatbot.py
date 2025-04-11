@@ -4,6 +4,14 @@ import json
 import os
 import streamlit.components.v1 as components
 
+# d2c, survey genius, mellerisearch expansion 기능
+if (st.session_state.d2c_expanded == True) or (st.session_state.mellerisearch_expanded == True) or (st.session_state.survey_expanded == True) or (st.session_state.hrdx_expanded == True):
+    st.session_state.d2c_expanded = False
+    st.session_state.survey_expanded = False
+    st.session_state.mellerisearch_expanded = False
+    st.session_state.hrdx_expanded = False
+    st.rerun()
+
 # =======================================================================
 # 서비스 페이지 개발 가이드
 # =======================================================================
@@ -19,7 +27,7 @@ import streamlit.components.v1 as components
 
 # ======= 서비스별 커스터마이징 영역 I =======
 # 서비스 ID (세션 상태 키 접두사로 사용)
-SERVICE_ID = "nps3"
+SERVICE_ID = "your-chatbot"
 # ========================================
 
 
@@ -28,35 +36,29 @@ SERVICE_ID = "nps3"
 
 # ==== MAIN 채팅 화면 정보 ====
 # 서비스 기본 정보
-SERVICE_NAME = "Intellytics NPS 분석 서비스"
+SERVICE_NAME = "Your chatbot"
 SERVICE_DESCRIPTION = """
-이 서비스는 고객 NPS(Net Promoter Score) 데이터를 분석하여
-비즈니스 인사이트를 제공합니다. 
-
-고객 피드백을 업로드하면 AI가 분석하여 개선점과 
-주요 트렌드를 알려드립니다.
+Your chatbot은 Chatbot Generation을 통해 만든 나만의 AI 챗봇을 사용해볼 수 있는 서비스를 제공합니다.<br>
+아래 챗봇 사용을 위해 필요한 설정 정보를 입력하고, 나만의 AI 챗봇을 사용해보세요.
 """
 
-# 대표 질문 리스트
+# 대표 질문 리스트 (더 이상 사용되지 않음)
 SAMPLE_QUESTIONS = [
-    "NPS 점수가 가장 낮은 상위 3개 제품은 무엇인가요?",
-    "지난 분기 대비 NPS 점수가 가장 많이 향상된 카테고리는?",
-    "고객 불만이 가장 많은 영역과 개선 방안을 알려주세요"
+    "Mellerikat은 어떤 컴포넌트로 구성되어있나요?",
+    "Mellerikat에서 ALO는 어떤 역할을 하나요?",
+    "AI Conductor와 Edge Conductor의 역할은 무엇인가요?",
+    "AI Contents에는 어떤 종류들이 있나요?",
+    "Mellerikat은 어떻게 사용해볼 수 있나요?"
 ]
 
 # # API 엔드포인트 형식 (중요: 서비스별 SERVICE_ID를 적용하여 엔드포인트에 연결합니다.)
-# api_endpoint = SERVICE_ID+"."+os.getenv("ROOT_DOMAIN")
-
-# 테스트를 위한 API 엔드포인트 (테스트용입니다.)
-api_endpoint = os.environ.get("API 엔드포인트", "http://localhost:8081/ask")
-# api_endpoint = st.text_input("API 엔드포인트", value="http://localhost:8081/ask")
+# 실제 운영에서는 아래와 같이 endpoint의 전체 url로 수정해주셔야 합니다.
+# 마지막에 API를 구분하는 path는 LLO화 하실 때 확인하실 수 있을 겁니다.
+api_endpoint = "http://" + SERVICE_ID + "." + os.getenv("ROOT_DOMAIN", "localhost:1444") + "/api/ask_chat"
 
 # ==== Sidebar 화면 정보 ====
-# SIDEBAR_INFO = "### 서비스 안내"
-# HTML 문법 가능
 SIDEBAR_SEARCHING_GUIDE = """
-NPS 데이터를 분석하여 실행 가능한 인사이트를 제공합니다.<br>
-**구체적인 질문을 통해 더 정확한 분석 결과를 얻을 수 있습니다**
+Your chatbot은 Chatbot Generation을 통해 만든 나만의 AI 챗봇을 사용해볼 수 있는 서비스를 제공합니다.
 """
 # ========================================
 
@@ -82,42 +84,93 @@ if f"{SERVICE_ID}_clear_input" not in st.session_state:
 if f"{SERVICE_ID}_text_input_key_counter" not in st.session_state:
     st.session_state[f"{SERVICE_ID}_text_input_key_counter"] = 0
 
+# MongoDB 및 OpenAI 설정 상태 초기화
+if f"{SERVICE_ID}_mongodb_uri" not in st.session_state:
+    st.session_state[f"{SERVICE_ID}_mongodb_uri"] = ""
+
+if f"{SERVICE_ID}_collection_name" not in st.session_state:
+    st.session_state[f"{SERVICE_ID}_collection_name"] = ""
+
+if f"{SERVICE_ID}_openai_public_key" not in st.session_state:
+    st.session_state[f"{SERVICE_ID}_openai_public_key"] = ""
+
+if f"{SERVICE_ID}_openai_secret_key" not in st.session_state:
+    st.session_state[f"{SERVICE_ID}_openai_secret_key"] = ""
+
+if f"{SERVICE_ID}_model_name" not in st.session_state:
+    st.session_state[f"{SERVICE_ID}_model_name"] = "gpt-4o-mini"
+
+if f"{SERVICE_ID}_embedding_model" not in st.session_state:
+    st.session_state[f"{SERVICE_ID}_embedding_model"] = "text-embedding-3-small"
+
 
 # ======= API 통신 함수 =======
-# API 통신 함수는 서비스별로 필요한 파라미터를 추가하거나 수정할 수 있습니다.
-# README.md 파일의 'API 통신' 섹션을 참고하여 커스터마이징하세요.
-#
-# 파라미터:
-# - endpoint: API 엔드포인트 URL
-# - query: 사용자 질의 텍스트
-# - language: 응답 언어 설정 (기본값: "ko")
-#
-# 추가 파라미터가 필요한 경우:
-# - 서비스 유형별 파라미터 (예: service_type, model_name 등)
-# - 데이터 처리 옵션 (예: include_chart=True)
-# 
-# 응답 형식:
-# - success: 성공 여부 (True/False)
-# - data: API 응답 데이터 (성공 시)
-# - error: 오류 메시지 (실패 시)
-def ask_llm_api(endpoint, query,language="ko"):
+def ask_llm_api(endpoint, query, language="ko"):
     try:
-        # API 요청 데이터 준비
-        payload = {
-            "query": query,
-            "language": language
+        # MongoDB 및 OpenAI 설정 가져오기
+        mongodb_uri = st.session_state.get(f"{SERVICE_ID}_mongodb_uri", "")
+        collection_name = st.session_state.get(f"{SERVICE_ID}_collection_name", "")
+        openai_public_key = st.session_state.get(f"{SERVICE_ID}_openai_public_key", "")
+        openai_secret_key = st.session_state.get(f"{SERVICE_ID}_openai_secret_key", "")
+        model_name = st.session_state.get(f"{SERVICE_ID}_model_name", "gpt-4o-mini")
+        embedding_model = st.session_state.get(f"{SERVICE_ID}_embedding_model", "text-embedding-3-small")
+        
+        # 필수 정보 확인
+        if not all([mongodb_uri, collection_name, openai_public_key, openai_secret_key]):
+            return {
+                "success": False,
+                "error": "MongoDB 연결 정보와 OpenAI API 키를 모두 입력해주세요."
+            }
+        
+        # API 요청 파라미터 준비
+        params = {
+            "question": query
         }
         
-        # API 호출
+        # API 요청 헤더 준비
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        
+        # API 요청 본문 준비
+        payload = {
+            "question": query,
+            "mongodb_uri": mongodb_uri,
+            "collection_name": collection_name,
+            "options": {
+                "openai_public_key": openai_public_key,
+                "openai_secret_key": openai_secret_key,
+                "model_name": model_name,
+                "embedding_model": embedding_model
+            }
+        }
+        
+        # API 호출 (URL 파라미터 + JSON 본문 조합)
+        api_url = f"{endpoint}?question={requests.utils.quote(query)}"
         response = requests.post(
-            endpoint,
+            api_url,
+            headers=headers,
             json=payload,
-            headers={"Content-Type": "application/json"},
             timeout=30  # 30초 타임아웃 설정
         )
         
         if response.status_code == 200:
-            return {"success": True, "data": response.json()}
+            # 전체 응답 확인
+            data = response.json()
+            
+            # 응답에서 직접 "answer" 필드 추출
+            answer = data.get("answer", "응답에 answer 필드가 없습니다.")
+            sources = data.get("sources", [])
+            
+            # 응답 구성
+            return {
+                "success": True,
+                "data": {
+                    "result": answer,
+                    "sources": sources
+                }
+            }
         else:
             return {
                 "success": False, 
@@ -139,7 +192,6 @@ def ask_llm_api(endpoint, query,language="ko"):
 with st.sidebar:
     st.title(SERVICE_NAME)
     
-    # st.markdown(SIDEBAR_INFO)
     st.markdown(SIDEBAR_SEARCHING_GUIDE, unsafe_allow_html=True)
     
     st.markdown("---")
@@ -177,25 +229,73 @@ with st.sidebar:
     
     # 사이드바 하단에 저작권 정보 표시
     st.markdown("---")
-    st.markdown("© 2025 LLM 서비스 템플릿 | 버전 1.0")
+    st.markdown("© 2025 Mellerikat Assistant | 버전 1.0")
 
 # 1. 메인 화면 및 서비스 설명
 st.markdown(f"<div class='main-title'>{SERVICE_NAME}</div>", unsafe_allow_html=True)
 st.markdown(f"<div class='service-description'>{SERVICE_DESCRIPTION}</div>", unsafe_allow_html=True)
 
-# 2. 대표 질문 섹션
-st.markdown("<h3 class='sample-questions-title'>대표 질문</h3>", unsafe_allow_html=True)
-st.markdown("<p class='sample-questions-description'>이 서비스의 예시 질문 목록입니다. 궁금한 질문을 클릭하면 바로 실행되니 편하게 활용해 보세요!</p>", unsafe_allow_html=True)
+# 2. 설정 입력 부분 (대표 질문을 대체)
+# st.markdown("<h4 class='config-title'>설정 정보 입력</h4>", unsafe_allow_html=True)
 
-# 3. 대표 질문 버튼 컨테이너 및 버튼
-st.markdown("<div class='sample-questions-container'>", unsafe_allow_html=True)
-for i, question in enumerate(SAMPLE_QUESTIONS):
-    if st.button(question, key=f"{SERVICE_ID}_q_btn_{i}", use_container_width=True):
-        st.session_state[f"{SERVICE_ID}_user_input"] = question
-        st.session_state[f"{SERVICE_ID}_question_selected"] = True
-        st.session_state[f"{SERVICE_ID}_selected_question"] = question  # 선택된 질문 저장
-        st.rerun()  # 여기서는 rerun으로 페이지를 새로고침하고 아래의 코드에서 질문 처리
+# MongoDB 및 OpenAI 설정 입력 폼
+# st.markdown("<div class='config-container'>", unsafe_allow_html=True)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("##### MongoDB 설정")
+    mongodb_uri = st.text_input(
+        "MongoDB URI", 
+        value=st.session_state.get(f"{SERVICE_ID}_mongodb_uri", ""),
+        type="password",
+        key=f"{SERVICE_ID}_mongodb_uri_input",
+        placeholder="mongodb://username:password@hostname:port/database"
+    )
+    st.session_state[f"{SERVICE_ID}_mongodb_uri"] = mongodb_uri
+    
+    collection_name = st.text_input(
+        "Collection 이름", 
+        value=st.session_state.get(f"{SERVICE_ID}_collection_name", ""),
+        key=f"{SERVICE_ID}_collection_name_input",
+        placeholder="embeddings"
+    )
+    st.session_state[f"{SERVICE_ID}_collection_name"] = collection_name
+
+with col2:
+    st.markdown("##### OpenAI API 설정")
+    openai_public_key = st.text_input(
+        "OpenAI Public Key", 
+        value=st.session_state.get(f"{SERVICE_ID}_openai_public_key", ""),
+        type="password",
+        key=f"{SERVICE_ID}_openai_public_key_input",
+        placeholder="sk-..."
+    )
+    st.session_state[f"{SERVICE_ID}_openai_public_key"] = openai_public_key
+    
+    openai_secret_key = st.text_input(
+        "OpenAI Secret Key", 
+        value=st.session_state.get(f"{SERVICE_ID}_openai_secret_key", ""),
+        type="password",
+        key=f"{SERVICE_ID}_openai_secret_key_input",
+        placeholder="org-..."
+    )
+    st.session_state[f"{SERVICE_ID}_openai_secret_key"] = openai_secret_key
+
+st.markdown("##### 모델 설정")
+model_name = st.selectbox(
+    "OpenAI 모델",
+    options=["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+    index=1 if st.session_state.get(f"{SERVICE_ID}_model_name", "") == "gpt-4o-mini" else 0,
+    key=f"{SERVICE_ID}_model_name_input"
+)
+st.session_state[f"{SERVICE_ID}_model_name"] = model_name
+
 st.markdown("</div>", unsafe_allow_html=True)
+
+# 필수 설정 확인 (MongoDB 및 OpenAI API 키)
+if not all([mongodb_uri, collection_name, openai_public_key, openai_secret_key]):
+    st.warning("모든 설정 정보를 입력해주세요. 설정이 완료되어야 챗봇과 대화할 수 있습니다.")
 
 # 4. 채팅 컨테이너 생성 - 여기서 정의만 하고 내용은 아래에서 채움
 chat_container = st.container()
@@ -203,6 +303,17 @@ spinner_container = st.empty()
 
 # 사용자 질문 처리 및 API 호출 함수 정의
 def process_user_query(query):
+    # 필수 정보 확인
+    mongodb_uri = st.session_state.get(f"{SERVICE_ID}_mongodb_uri", "")
+    collection_name = st.session_state.get(f"{SERVICE_ID}_collection_name", "")
+    openai_public_key = st.session_state.get(f"{SERVICE_ID}_openai_public_key", "")
+    openai_secret_key = st.session_state.get(f"{SERVICE_ID}_openai_secret_key", "")
+    
+    if not all([mongodb_uri, collection_name, openai_public_key, openai_secret_key]):
+        with chat_container.chat_message("assistant"):
+            st.markdown("⚠️ 챗봇을 사용하기 위해 모든 설정 정보를 입력해주세요.")
+        return
+    
     # 사용자 입력 표시
     with chat_container.chat_message("user"):
         st.markdown(query)
@@ -218,7 +329,17 @@ def process_user_query(query):
     if not result.get("success", False):
         response = f"오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}"
     else:
-        response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+        answer = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+        sources = result.get("data", {}).get("sources", [])
+        
+        # 응답 텍스트 구성
+        response = answer
+        
+        # 소스 정보가 있다면 추가
+        if sources:
+            response += "\n\n**출처:**\n"
+            for source in sources:
+                response += f"- {source}\n"
     
     # 응답 표시
     with chat_container.chat_message("assistant"):
@@ -365,11 +486,12 @@ with chat_container:
             width=0,
         )
 
-# # 페이지 끝에 여백 추가 (입력창이 메시지를 가리지 않도록)
-# st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
-
 # 채팅 입력을 사용하여 사용자 입력 받기
-user_input = st.chat_input("질문을 입력하세요...", key=f"{SERVICE_ID}_chat_input")
+user_input = st.chat_input(
+    "질문을 입력하세요...", 
+    key=f"{SERVICE_ID}_chat_input",
+    disabled=not all([mongodb_uri, collection_name, openai_public_key, openai_secret_key])
+)
 
 # 저장된 대표 질문이 있는지 확인하고 처리
 if st.session_state.get(f"{SERVICE_ID}_selected_question"):
@@ -444,9 +566,14 @@ st.markdown(f"""
     /* 메인 타이틀 스타일 */
     .main-title {{
         font-size: 2.2rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        color: #A50034; /* LG 로고 색상으로 메인 제목 변경 */
+        font-weight: 800;
+        background: linear-gradient(45deg, #A50034, #FF385C);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.2rem;
+        text-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        letter-spacing: -0.5px;
+        animation: fadeIn 1.5s ease-out;
         text-align: center;
     }}
     
@@ -460,12 +587,30 @@ st.markdown(f"""
         font-size: 1rem;
         line-height: 1.5;
     }}
+
+    /* 설정 정보 컨테이너 */
+    .config-container {{
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border-left: 4px solid #A50034;
+    }}
+    
+    .config-title {{
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }}
     
     /* Streamlit 기본 컨테이너 너비 조정 */
     .block-container {{
-        max-width: 800px !important;
+        width: 70vw !important;
+        max-width: 1200px !important;
         padding-left: 20px !important;
         padding-right: 20px !important;
+        margin: 0 auto !important;
     }}
     
     /* 사이드바 너비 조정 */
@@ -499,19 +644,6 @@ st.markdown(f"""
         position: relative !important;
         display: flex !important;
         flex-direction: column !important;
-    }}
-    
-    .sample-questions-description {{
-        font-size: 0.9rem;
-        color: #666666;
-        margin-bottom: 0.3rem;
-    }}
-    
-    .sample-questions-container {{
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        margin-bottom: 1.5rem;
     }}
     
     /* 언어 선택기 스타일 */
@@ -559,8 +691,8 @@ st.markdown("""
 
 /* 채팅 입력 스타일 - 컨테이너와 동일한 크기로 설정 */
 [data-testid="stChatInput"] {
-    max-width: 800px !important;
-    width: 800px !important;
+    max-width: 1200px !important;
+    width: 70vw !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }

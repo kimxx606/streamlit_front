@@ -4,6 +4,22 @@ import json
 import os
 import streamlit.components.v1 as components
 
+# 외부 CSS 파일 불러오기
+def load_css():
+    with open("style/style.css", "r", encoding="utf-8") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# CSS 로드 함수 호출
+load_css()
+
+# d2c, survey genius, mellerisearch expansion 기능
+if (st.session_state.d2c_expanded == True) or (st.session_state.mellerisearch_expanded == True) or (st.session_state.survey_expanded == True) or (st.session_state.hrdx_expanded == True):
+    st.session_state.d2c_expanded = False
+    st.session_state.survey_expanded = False
+    st.session_state.mellerisearch_expanded = False
+    st.session_state.hrdx_expanded = False
+    st.rerun()
+
 # =======================================================================
 # 서비스 페이지 개발 가이드
 # =======================================================================
@@ -19,7 +35,7 @@ import streamlit.components.v1 as components
 
 # ======= 서비스별 커스터마이징 영역 I =======
 # 서비스 ID (세션 상태 키 접두사로 사용)
-SERVICE_ID = "nps3"
+SERVICE_ID = "melleri-assistant"
 # ========================================
 
 
@@ -28,35 +44,45 @@ SERVICE_ID = "nps3"
 
 # ==== MAIN 채팅 화면 정보 ====
 # 서비스 기본 정보
-SERVICE_NAME = "Intellytics NPS 분석 서비스"
+SERVICE_NAME = "Mellerikat Assistant 서비스"
 SERVICE_DESCRIPTION = """
-이 서비스는 고객 NPS(Net Promoter Score) 데이터를 분석하여
-비즈니스 인사이트를 제공합니다. 
-
-고객 피드백을 업로드하면 AI가 분석하여 개선점과 
-주요 트렌드를 알려드립니다.
+이 서비스는 mellerikat을 쉽게 이해하고 사용할 수 있도록 지원하며, AI 솔루션 개발을 위한 메뉴얼을 간편하게 제공합니다.<br>
+MelleriAssistant는 Intellytics AI Agnet Tool에서 제공하는 Chatbot Generation을 통해서 만들어졌습니다. 나만의 AI 챗봇을 만들고 싶으신 분들은 <a href="https://ai-agent-demo.mkdev-kic.intellytics.lge.com/service_chatbot_generation">여기</a>를 확인하세요!
 """
+
+# SERVICE_DESCRIPTION = """
+# 이 서비스는 mellerikat을 이해하고 쉽게 사용할 수 있도록 도와드리며,
+# AI 솔루션 개발을 위한 메뉴얼을 간편하게 찾아볼 수 있는 서비스를 제공합니다.<br>
+# 본 서비스는 "문서 기반 질의응답 AI 챗봇 시스템 개발"을 기반으로 만들어진 서비스이며,<br>
+# mellerikat 메뉴얼 문서가 아닌 본인의 문서로 챗봇 시스템을 만들고 싶다면 <a href="http://mod.lge.com/hub/prism/mellerikat-assistant/-/tree/melleri-assistant/">여기 링크</a>를 참고하세요.
+# """
 
 # 대표 질문 리스트
 SAMPLE_QUESTIONS = [
-    "NPS 점수가 가장 낮은 상위 3개 제품은 무엇인가요?",
-    "지난 분기 대비 NPS 점수가 가장 많이 향상된 카테고리는?",
-    "고객 불만이 가장 많은 영역과 개선 방안을 알려주세요"
+    "Mellerikat은 어떤 컴포넌트로 구성되어있나요?",
+    "Mellerikat에서 ALO는 어떤 역할을 하나요?",
+    "AI Conductor와 Edge Conductor의 역할은 무엇인가요?",
+    "AI Contents에는 어떤 종류들이 있나요?",
+    "Mellerikat은 어떻게 사용해볼 수 있나요?"
 ]
 
 # # API 엔드포인트 형식 (중요: 서비스별 SERVICE_ID를 적용하여 엔드포인트에 연결합니다.)
-# api_endpoint = SERVICE_ID+"."+os.getenv("ROOT_DOMAIN")
+# 실제 운영에서는 아래와 같이 endpoint의 전체 url로 수정해주셔야 합니다.
+# 마지막에 API를 구분하는 path는 LLO화 하실 때 확인하실 수 있을 겁니다.
+# api_endpoint = "http://" + SERVICE_ID + "." + os.getenv("ROOT_DOMAIN") + "/api/ask_chat"
+api_endpoint = "https://melleri-assistant.mkdev-kic.intellytics.lge.com/api/ask_chat"
 
-# 테스트를 위한 API 엔드포인트 (테스트용입니다.)
-api_endpoint = os.environ.get("API 엔드포인트", "http://localhost:8081/ask")
+# # # 테스트를 위한 API 엔드포인트 (테스트용입니다.)
+# api_endpoint = os.environ.get("API 엔드포인트", "http://localhost:1444/api/ask_chat")
+# api_endpoint = os.environ.get("API 엔드포인트", "http://localhost:8081/ask")
 # api_endpoint = st.text_input("API 엔드포인트", value="http://localhost:8081/ask")
 
 # ==== Sidebar 화면 정보 ====
 # SIDEBAR_INFO = "### 서비스 안내"
 # HTML 문법 가능
 SIDEBAR_SEARCHING_GUIDE = """
-NPS 데이터를 분석하여 실행 가능한 인사이트를 제공합니다.<br>
-**구체적인 질문을 통해 더 정확한 분석 결과를 얻을 수 있습니다**
+Mellerikat Assistant는 AI 솔루션 개발 플랫폼 Mellerikat에 대한 질문에 답변합니다.<br>
+**구체적인 질문을 통해 Mellerikat의 기능과 사용법에 대한 상세한 안내를 받을 수 있습니다**
 """
 # ========================================
 
@@ -100,24 +126,53 @@ if f"{SERVICE_ID}_text_input_key_counter" not in st.session_state:
 # - success: 성공 여부 (True/False)
 # - data: API 응답 데이터 (성공 시)
 # - error: 오류 메시지 (실패 시)
-def ask_llm_api(endpoint, query,language="ko"):
+def ask_llm_api(endpoint, query, language="ko"):
     try:
-        # API 요청 데이터 준비
-        payload = {
-            "query": query,
-            "language": language
-        }
         
-        # API 호출
+        # API 엔드포인트 URL 구성 (쿼리 파라미터 사용)
+        api_url = f"{endpoint}?question={requests.utils.quote(query)}"
+        # print(f"요청 URL: {api_url}")  # 디버깅용
+        
+        # API 호출 (Body가 아닌 URL 파라미터로 전송)
         response = requests.post(
-            endpoint,
-            json=payload,
-            headers={"Content-Type": "application/json"},
+            api_url,
+            headers={"accept": "application/json"},
             timeout=30  # 30초 타임아웃 설정
-        )
+        )        
+        # print(f"응답 상태 코드: {response.status_code}")  # 디버깅용
+        
+        # API 요청 데이터 준비
+        # payload = {
+        #     "query": query,
+        #     "language": language
+        # }
+        
+        # # API 호출
+        # response = requests.post(
+        #     endpoint,
+        #     json=payload,
+        #     headers={"Content-Type": "application/json"},
+        #     timeout=30  # 30초 타임아웃 설정
+        # )
         
         if response.status_code == 200:
-            return {"success": True, "data": response.json()}
+            # 전체 응답 확인
+            data = response.json()
+            # print(f"API 응답: {data}")  # 디버깅용
+            
+            # 응답에서 직접 "answer" 필드 추출
+            answer = data.get("answer", "응답에 answer 필드가 없습니다.")
+            sources = data.get("sources", [])
+            
+            # 응답 구성
+            return {
+                "success": True,
+                "data": {
+                    "result": answer,
+                    "sources": sources
+                }
+            }
+            # return {"success": True, "data": response.json()}
         else:
             return {
                 "success": False, 
@@ -177,7 +232,7 @@ with st.sidebar:
     
     # 사이드바 하단에 저작권 정보 표시
     st.markdown("---")
-    st.markdown("© 2025 LLM 서비스 템플릿 | 버전 1.0")
+    st.markdown("© 2025 Mellerikat Assistant | 버전 1.0")
 
 # 1. 메인 화면 및 서비스 설명
 st.markdown(f"<div class='main-title'>{SERVICE_NAME}</div>", unsafe_allow_html=True)
@@ -218,7 +273,20 @@ def process_user_query(query):
     if not result.get("success", False):
         response = f"오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}"
     else:
-        response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+        answer = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
+        sources = result.get("data", {}).get("sources", [])
+        
+        # 응답 텍스트 구성
+        response = answer
+        
+        # 소스 정보가 있다면 추가
+        if sources:
+            response += "\n\n**출처:**\n"
+            for source in sources:
+                response += f"- {source}\n"
+        
+        
+        # response = result.get("data", {}).get("result", "응답을 받지 못했습니다.")
     
     # 응답 표시
     with chat_container.chat_message("assistant"):
@@ -365,8 +433,38 @@ with chat_container:
             width=0,
         )
 
-# # 페이지 끝에 여백 추가 (입력창이 메시지를 가리지 않도록)
-# st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+# 채팅 컨테이너 자동 스크롤 스크립트만 유지
+st.markdown("""
+<div class="chat-bottom-spacing"></div>
+
+<script>
+// 채팅 컨테이너를 자동으로 스크롤하는 함수
+function scrollChatContainerToBottom() {
+    const chatContainer = document.querySelector('.stChatMessageContainer');
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+}
+
+// 페이지 로드 후 및 DOM 변경 시마다 스크롤 함수 실행
+document.addEventListener('DOMContentLoaded', function() {
+    scrollChatContainerToBottom();
+    // DOM 변경을 관찰하여 새 메시지가 추가될 때마다 스크롤
+    const observer = new MutationObserver(function(mutations) {
+        scrollChatContainerToBottom();
+    });
+    
+    // 페이지 로드 후 잠시 기다린 후 채팅 컨테이너를 찾아 관찰 시작
+    setTimeout(function() {
+        const chatContainer = document.querySelector('.stChatMessageContainer');
+        if (chatContainer) {
+            observer.observe(chatContainer, { childList: true, subtree: true });
+        }
+        scrollChatContainerToBottom();
+    }, 1000);
+});
+</script>
+""", unsafe_allow_html=True)
 
 # 채팅 입력을 사용하여 사용자 입력 받기
 user_input = st.chat_input("질문을 입력하세요...", key=f"{SERVICE_ID}_chat_input")
@@ -442,11 +540,18 @@ st.markdown(f"""
 <style>
    
     /* 메인 타이틀 스타일 */
+
+
     .main-title {{
         font-size: 2.2rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        color: #A50034; /* LG 로고 색상으로 메인 제목 변경 */
+        font-weight: 800;
+        background: linear-gradient(45deg, #A50034, #FF385C);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.2rem;
+        text-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        letter-spacing: -0.5px;
+        animation: fadeIn 1.5s ease-out;
         text-align: center;
     }}
     
@@ -460,12 +565,14 @@ st.markdown(f"""
         font-size: 1rem;
         line-height: 1.5;
     }}
-    
+
     /* Streamlit 기본 컨테이너 너비 조정 */
     .block-container {{
-        max-width: 800px !important;
+        width: 70vw !important;
+        max-width: 1200px !important;
         padding-left: 20px !important;
         padding-right: 20px !important;
+        margin: 0 auto !important;
     }}
     
     /* 사이드바 너비 조정 */
@@ -559,8 +666,8 @@ st.markdown("""
 
 /* 채팅 입력 스타일 - 컨테이너와 동일한 크기로 설정 */
 [data-testid="stChatInput"] {
-    max-width: 800px !important;
-    width: 800px !important;
+    max-width: 1200px !important;
+    width: 70vw !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
