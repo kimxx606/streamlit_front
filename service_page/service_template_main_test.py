@@ -510,6 +510,120 @@ def display_chat_messages():
             st.session_state[f'{SERVICE_ID}_messages'].append({"role": "assistant", "content": "Intellytics AI Agent에게 물어보세요!"})
         
         st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown("""
+            <script>
+            const container = document.querySelector('.chat-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+            </script>
+        """, unsafe_allow_html=True)
+        
+        # 자동 스크롤 스크립트 추가
+        st.markdown("""
+        <script>
+        const chatContainer = document.querySelector('.chat-container');
+        if (chatContainer) {
+            const observer = new MutationObserver(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            });
+            observer.observe(chatContainer, { childList: true, subtree: true });
+
+            // 처음 로딩 시에도 스크롤
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+        }
+        </script>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("""
+        <script>
+        window.addEventListener("load", function () {
+            const scrollToBottom = () => {
+                const containers = parent.document.querySelectorAll('.chat-container');
+                if (containers.length > 0) {
+                    const container = containers[containers.length - 1]; // 가장 최근 채팅창
+                    container.scrollTop = container.scrollHeight;
+                }
+            };
+
+            // 최초 로딩 시
+            scrollToBottom();
+
+            // MutationObserver로 메시지 변경 감지
+            const containers = parent.document.querySelectorAll('.chat-container');
+            if (containers.length > 0) {
+                const container = containers[containers.length - 1];
+                const observer = new MutationObserver(scrollToBottom);
+                observer.observe(container, { childList: true, subtree: true });
+            }
+
+            // 약간 지연 후 재시도
+            setTimeout(scrollToBottom, 300);
+            setTimeout(scrollToBottom, 700);
+            setTimeout(scrollToBottom, 1500);
+        });
+        </script>
+        """, unsafe_allow_html=True)
+        st.markdown("""
+        <script>
+        function scrollToBottom() {
+            const container = window.parent.document.querySelector('.chat-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // 1. DOM이 바뀔 때마다 자동 스크롤
+        const container = window.parent.document.querySelector('.chat-container');
+        if (container) {
+            const observer = new MutationObserver(function() {
+                scrollToBottom();
+            });
+            observer.observe(container, { childList: true, subtree: true });
+        }
+
+        // 2. 처음 로딩 직후에도 스크롤 (대표 질문 클릭 후 rerun 포함)
+        window.addEventListener("load", function() {
+            scrollToBottom();
+            setTimeout(scrollToBottom, 300);
+            setTimeout(scrollToBottom, 600);
+        });
+
+        // 3. 추가로 보장
+        setTimeout(scrollToBottom, 100);
+        setTimeout(scrollToBottom, 500);
+        setTimeout(scrollToBottom, 1000);
+        </script>
+        """, unsafe_allow_html=True)
+                # 자동 스크롤 스크립트 (iframe-safe)
+        st.markdown("""
+        <script>
+        const scrollToBottom = () => {
+            const container = document.querySelector('.chat-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        };
+
+        const container = document.querySelector('.chat-container');
+        if (container) {
+            // 최초 로딩 및 렌더링 이후 딜레이를 고려한 다단계 보장
+            setTimeout(scrollToBottom, 100);
+            setTimeout(scrollToBottom, 300);
+            setTimeout(scrollToBottom, 600);
+
+            // DOM 변화 감지 (메시지 추가 시마다 실행)
+            const observer = new MutationObserver(scrollToBottom);
+            observer.observe(container, { childList: true, subtree: true });
+        }
+        </script>
+        """, unsafe_allow_html=True)
+
+
+
 
 # 처음 페이지 로드 시 채팅 메시지 표시
 display_chat_messages()
@@ -748,7 +862,7 @@ st.markdown("""
 [data-testid="stForm"] {
     position: fixed !important;
     bottom: 20px !important;
-    left: calc(50% + 175px) !important; /* 사이드바 너비 고려하여 중앙 정렬 */
+    left: calc(50% + 200px) !important; /* 사이드바 너비 고려하여 중앙 정렬 */
     transform: translateX(-50%) !important;
     width: calc(100% - 350px) !important; /* 사이드바 너비(350px)를 뺀 너비로 설정 */
     margin: 0 !important;
@@ -788,7 +902,6 @@ st.markdown("""
     height: 40px !important;
     font-size: 14px !important;
     width: 100% !important;
-    box-sizing: border-box !important;
 }
 
 /* 전송 버튼 스타일 */
