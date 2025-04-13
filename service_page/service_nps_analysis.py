@@ -652,7 +652,7 @@ st.markdown(f"""
         background-color: #f8f9fa;
         padding: 1rem;
         border-radius: 8px;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0rem;
         font-size: 1rem;
         line-height: 1.5;
     }}
@@ -748,9 +748,9 @@ st.markdown("""
 [data-testid="stForm"] {
     position: fixed !important;
     bottom: 20px !important;
-    left: calc(50% + 175px) !important; /* 사이드바 너비 고려하여 중앙 정렬 */
+    left: calc(50% + 220px) !important; /* 사이드바 너비 고려하여 중앙 정렬 */
     transform: translateX(-50%) !important;
-    width: calc(100% - 350px) !important; /* 사이드바 너비(350px)를 뺀 너비로 설정 */
+    width: calc(100% - 320px) !important; /* 사이드바 너비(350px)를 뺀 너비로 설정 */
     margin: 0 !important;
     padding: 0px 0px !important;
     background-color: white !important;

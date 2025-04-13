@@ -69,7 +69,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     text-align: center;
-    margin: 3rem 0;
+    margin: 0rem 0;
     color: #666;
 }
 
@@ -176,6 +176,7 @@ button[kind="header"] {
     margin-bottom: 1rem;
     color: #A50034; /* LG 로고 색상으로 메인 제목 변경 */
     text-align: center;
+    margin-top: 0px;
 }
 
 /* 메인 타이틀 스타일 - 그라데이션 */
