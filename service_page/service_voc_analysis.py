@@ -9,7 +9,7 @@ import pandas as pd
 
 # 외부 CSS 파일 불러오기
 def load_css():
-    with open("style/style.css", "r", encoding="utf-8") as f:
+    with open("service_page/style/style.css", "r", encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # CSS 로드 함수 호출

@@ -15,18 +15,11 @@ def load_css():
 # CSS 로드 함수 호출
 load_css()
 
-# d2c, survey genius, mellerisearch expansion 기능
+# d2c, HR Analysis, mellerisearch expansion 기능
 # 세션 상태 초기화 및 확장 상태 관리
 initialize_expansion_states()
 if set_expanded_state('survey'):
     st.rerun()
-    
-# if (st.session_state.d2c_expanded == True) or (st.session_state.mellerisearch_expanded == True) or (st.session_state.survey_expanded == True) or (st.session_state.hrdx_expanded == True):
-#     st.session_state.d2c_expanded = False
-#     st.session_state.survey_expanded = False
-#     st.session_state.mellerisearch_expanded = False
-#     st.session_state.hrdx_expanded = False
-#     st.rerun()
 
 # =======================================================================
 # 서비스 페이지 개발 가이드
@@ -383,7 +376,7 @@ with st.sidebar:
     st.markdown("---")
     
     # 언어 선택 라디오 버튼
-    st.markdown("<div class='language-selector'>", unsafe_allow_html=True)
+    # st.markdown("<div class='language-selector'>", unsafe_allow_html=True)
     selected_language = st.radio(
         "Language:", 
         options=["한국어", "English"],
@@ -498,44 +491,44 @@ def process_user_query(query):
     st.session_state[f'{SERVICE_ID}_messages'].append({"role": "assistant", "content": response})
     st.session_state[f'{SERVICE_ID}_run_id']=run_id
 
-    # 자동 스크롤 컴포넌트 추가 (응답 후)
-    components.html(
-        """
-        <script>
-        function findChatContainer() {
-            // 여러 가능한 선택자를 시도
-            const selectors = [
-                '.stChatMessageContainer',
-                '[data-testid="stChatMessageContainer"]',
-                '.element-container:has(.stChatMessage)',
-                '#chat-container-marker',
-                '.main .block-container'
-            ];
+    # # 자동 스크롤 컴포넌트 추가 (응답 후)
+    # components.html(
+    #     """
+    #     <script>
+    #     function findChatContainer() {
+    #         // 여러 가능한 선택자를 시도
+    #         const selectors = [
+    #             '.stChatMessageContainer',
+    #             '[data-testid="stChatMessageContainer"]',
+    #             '.element-container:has(.stChatMessage)',
+    #             '#chat-container-marker',
+    #             '.main .block-container'
+    #         ];
             
-            for (const selector of selectors) {
-                const container = document.querySelector(selector);
-                if (container) return container;
-            }
-            return null;
-        }
+    #         for (const selector of selectors) {
+    #             const container = document.querySelector(selector);
+    #             if (container) return container;
+    #         }
+    #         return null;
+    #     }
         
-        // 스크롤 함수
-        function scrollToBottom() {
-            const chatContainer = findChatContainer();
-            if (chatContainer) {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
+    #     // 스크롤 함수
+    #     function scrollToBottom() {
+    #         const chatContainer = findChatContainer();
+    #         if (chatContainer) {
+    #             chatContainer.scrollTop = chatContainer.scrollHeight;
+    #         }
+    #     }
         
-        // 0.5초 후 스크롤 (애니메이션이 끝날 때쯤)
-        setTimeout(scrollToBottom, 500);
+    #     // 0.5초 후 스크롤 (애니메이션이 끝날 때쯤)
+    #     setTimeout(scrollToBottom, 500);
         
-        // 안전을 위해 약간의 지연을 두고 다시 시도
-        setTimeout(scrollToBottom, 800);
-        </script>
-        """,
-        height=0,
-    )
+    #     // 안전을 위해 약간의 지연을 두고 다시 시도
+    #     setTimeout(scrollToBottom, 800);
+    #     </script>
+    #     """,
+    #     height=0,
+    # )
 
 # 5. 메시지 표시 영역 - 이제 아래쪽에 위치
 with chat_container:
@@ -575,45 +568,45 @@ with chat_container:
             st.markdown(welcome_message)
             st.session_state[f'{SERVICE_ID}_messages'].append({"role": "assistant", "content": welcome_message})
     
-    # 자동 스크롤 컴포넌트 추가 (개선된 버전)
-    if st.session_state[f'{SERVICE_ID}_messages']:
-        components.html(
-            """
-            <script>
-            function findChatContainer() {
-                // 여러 가능한 선택자를 시도
-                const selectors = [
-                    '.stChatMessageContainer',
-                    '[data-testid="stChatMessageContainer"]',
-                    '.element-container:has(.stChatMessage)',
-                    '#chat-container-marker',
-                    '.main .block-container'
-                ];
+    # # 자동 스크롤 컴포넌트 추가 (개선된 버전)
+    # if st.session_state[f'{SERVICE_ID}_messages']:
+    #     components.html(
+    #         """
+    #         <script>
+    #         function findChatContainer() {
+    #             // 여러 가능한 선택자를 시도
+    #             const selectors = [
+    #                 '.stChatMessageContainer',
+    #                 '[data-testid="stChatMessageContainer"]',
+    #                 '.element-container:has(.stChatMessage)',
+    #                 '#chat-container-marker',
+    #                 '.main .block-container'
+    #             ];
                 
-                for (const selector of selectors) {
-                    const container = document.querySelector(selector);
-                    if (container) return container;
-                }
-                return null;
-            }
+    #             for (const selector of selectors) {
+    #                 const container = document.querySelector(selector);
+    #                 if (container) return container;
+    #             }
+    #             return null;
+    #         }
             
-            // 스크롤 함수
-            function scrollToBottom() {
-                const chatContainer = findChatContainer();
-                if (chatContainer) {
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                }
-            }
+    #         // 스크롤 함수
+    #         function scrollToBottom() {
+    #             const chatContainer = findChatContainer();
+    #             if (chatContainer) {
+    #                 chatContainer.scrollTop = chatContainer.scrollHeight;
+    #             }
+    #         }
             
-            // 0.5초 후 스크롤 (애니메이션이 끝날 때쯤)
-            setTimeout(scrollToBottom, 500);
+    #         // 0.5초 후 스크롤 (애니메이션이 끝날 때쯤)
+    #         setTimeout(scrollToBottom, 500);
             
-            // 안전을 위해 약간의 지연을 두고 다시 시도
-            setTimeout(scrollToBottom, 800);
-            </script>
-            """,
-            height=0,
-        )
+    #         // 안전을 위해 약간의 지연을 두고 다시 시도
+    #         setTimeout(scrollToBottom, 800);
+    #         </script>
+    #         """,
+    #         height=0,
+    #     )
 
 # 채팅 입력을 사용하여 사용자 입력 받기
 user_input = st.chat_input(key=f"{SERVICE_ID}_chat_input")

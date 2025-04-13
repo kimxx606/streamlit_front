@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_elements import elements, mui, html
+from util.init_menu_session_state import initialize_menu_session_state
 
 # CSS 스타일 추가
 def add_custom_css():
@@ -517,22 +518,6 @@ def add_custom_css():
         }
     </style>
     """, unsafe_allow_html=True)
-
-# 세션 상태 초기화 함수
-def initialize_session_state():
-    """세션 상태를 초기화합니다."""
-    # D2C 확장 여부 저장
-    if "d2c_expanded" not in st.session_state:
-        st.session_state.d2c_expanded = False
-    # Survey Genius 확장 여부 저장
-    if "survey_expanded" not in st.session_state:
-        st.session_state.survey_expanded = False
-    # mellerisearch 확장 여부 저장
-    if "mellerisearch_expanded" not in st.session_state:
-        st.session_state.mellerisearch_expanded = False
-    # hrdx 확장 여부 저장
-    if "hrdx_expanded" not in st.session_state:
-        st.session_state.hrdx_expanded = False
 
 # 공통 HTML 함수들
 def render_page_title(title, subtitle):
@@ -1066,7 +1051,7 @@ def main():
     )
     
     # 세션 상태 초기화
-    initialize_session_state()
+    initialize_menu_session_state()
     
     # 사용자 정의 CSS 추가
     add_custom_css()
@@ -1109,9 +1094,9 @@ def main():
         #     top_level_pages["INTELLYTICS AI AGENT"] = top_level_pages["INTELLYTICS AI AGENT"]
         
         # =====================================================================================================
-        # nps 페이지 추가
-        top_level_pages[main_title].append(st.Page("service_page/service_nps_analysis.py", title="\u00A0\u00A0\u00A0DX Automation for NPS"))
-        # top_level_pages[main_title].append(nps_page)
+        # # nps 페이지 추가
+        # top_level_pages[main_title].append(st.Page("service_page/service_nps_analysis.py", title="\u00A0\u00A0\u00A0DX Automation for NPS"))
+        # # top_level_pages[main_title].append(nps_page)
 
     
         # =====================================================================================================

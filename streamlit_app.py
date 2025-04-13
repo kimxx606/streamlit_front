@@ -1,27 +1,12 @@
 import streamlit as st
 from streamlit_elements import elements, mui, html
+from util.init_menu_session_state import initialize_menu_session_state
 
 # CSS 스타일 추가
 def add_custom_css():
     """외부 CSS 파일을 로드합니다."""
     with open("style_main/style_main.css", "r", encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-# 세션 상태 초기화 함수
-def initialize_session_state():
-    """세션 상태를 초기화합니다."""
-    # D2C 확장 여부 저장
-    if "d2c_expanded" not in st.session_state:
-        st.session_state.d2c_expanded = False
-    # Survey Genius 확장 여부 저장
-    if "survey_expanded" not in st.session_state:
-        st.session_state.survey_expanded = False
-    # mellerisearch 확장 여부 저장
-    if "mellerisearch_expanded" not in st.session_state:
-        st.session_state.mellerisearch_expanded = False
-    # hrdx 확장 여부 저장
-    if "hrdx_expanded" not in st.session_state:
-        st.session_state.hrdx_expanded = False
 
 # 공통 HTML 함수들
 def render_page_title(title, subtitle):
@@ -489,10 +474,33 @@ def main():
     )
     
     # 세션 상태 초기화
-    initialize_session_state()
+    initialize_menu_session_state()
     
     # 사용자 정의 CSS 추가
     add_custom_css()
+    
+    # 헤더에 홈 링크 기능 추가
+    st.markdown("""
+    <div class="home-link" onclick="window.location.href='/'"></div>
+    <iframe class="home-button-script" srcdoc="
+        <script>
+            // 헤더 텍스트 클릭 이벤트 추가
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const header = window.parent.document.querySelector('[data-testid=\\'stHeader\\']');
+                    if (header) {
+                        header.addEventListener('click', function(e) {
+                            // 헤더 왼쪽 영역 클릭 감지
+                            if (e.clientX < 200) {
+                                window.parent.location.href = '/';
+                            }
+                        });
+                    }
+                }, 1000);
+            });
+        </script>
+    "></iframe>
+    """, unsafe_allow_html=True)
     
     try:
         # 서비스별 메인 페이지
